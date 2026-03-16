@@ -1,0 +1,6 @@
+# 依赖清单文件,记录该项目需要安装哪些 Python 第三方库
+# requirements.txt 本质上就是 pip 的依赖清单格式，pip 官方明确说明它是给 pip install 用的，每一行可以是普通包名、带版本约束的 requirement specifier、URL、本地路径、其他 requirements 文件等。
+# 安装方式：pip install -r requirements.txt
+numpy==1.26.4
+opencv-contrib-python==4.11.0.86
+mediapipe==0.10.21
