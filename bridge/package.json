@@ -1,0 +1,12 @@
+{
+  "name": "handpilot-live2d-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HandPilot UDP to WebSocket bridge and Live2D static server",
+  "scripts": {
+    "start": "node udp_to_ws.js"
+  },
+  "dependencies": {
+    "ws": "^8.17.1"
+  }
+}

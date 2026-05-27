@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HandPilot Live2D</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="stage" data-costume="soft">
+      <section class="hero-panel">
+        <p class="eyebrow">HandPilot × Haru</p>
+        <h1>Live2D Gesture Companion</h1>
+        <p class="subtitle">用摄像头手势驱动角色动作、表情、语言与舞台反馈</p>
+      </section>
+
+      <section class="live2d-wrap" aria-label="Live2D 模型舞台">
+        <canvas id="live2d-canvas"></canvas>
+        <div id="tracking-orb" class="tracking-orb" aria-hidden="true"></div>
+        <div id="speech-bubble" class="speech-bubble" aria-live="polite"></div>
+        <div id="loading-card" class="loading-card">
+          <span class="loading-title">正在唤醒 Haru</span>
+          <span id="loading-detail">等待 Live2D 模型资源</span>
+          <span id="loading-bar" class="loading-bar"><i></i></span>
+        </div>
+      </section>
+
+      <aside class="control-panel">
+        <header class="panel-header">
+          <span class="status-light" id="ws-light"></span>
+          <div>
+            <h2>Control Monitor</h2>
+            <p id="ws-state">WebSocket 未连接</p>
+          </div>
+        </header>
+
+        <dl class="metrics">
+          <div>
+            <dt>Gesture</dt>
+            <dd id="current-gesture">UNKNOWN</dd>
+          </div>
+          <div>
+            <dt>Command</dt>
+            <dd id="current-command">CMD_NONE</dd>
+          </div>
+          <div>
+            <dt>Response</dt>
+            <dd id="current-response">Idle</dd>
+          </div>
+          <div>
+            <dt>Latency</dt>
+            <dd id="current-latency">-- ms</dd>
+          </div>
+        </dl>
+
+        <section class="hands-panel">
+          <h3>Hands</h3>
+          <div id="hands-list" class="hands-list">
+            <p class="empty">等待手势输入</p>
+          </div>
+        </section>
+
+        <section class="effect-panel">
+          <h3>Stage Effect</h3>
+          <p id="costume-state">制服柔光 · Soft Uniform</p>
+          <button id="enable-audio" type="button">开启角色声音</button>
+        </section>
+
+        <section class="debug-panel">
+          <h3>Local Test</h3>
+          <div id="test-buttons" class="test-buttons"></div>
+        </section>
+      </aside>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
