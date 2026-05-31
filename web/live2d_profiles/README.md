@@ -1,53 +1,52 @@
-# Live2D Profiles
+# Live2D Profile 适配规范
 
-这个目录是模型适配层，用来把 HandPilot 的通用命令映射到某个具体 Live2D 模型的动作、表情和参数效果。
+本目录是 HandPilot 的模型适配层。Python 端只输出模型无关的通用命令，例如
+`CMD_WAVE`、`CMD_PET_HEAD` 和 `CMD_LOOK_LEFT`；Profile 决定具体模型使用哪个动作、
+表情、参数变化和语音文案。
 
-## 为什么要有 profile
+## 当前适配器
 
-HandPilot Python 端只负责输出稳定命令，例如：
-
-```text
-CMD_WAVE
-CMD_PET_HEAD
-CMD_LOOK_LEFT
-CMD_COME_CLOSER
-```
-
-具体某个模型要播放哪个 `.motion3.json`、切换哪个表情、说哪句话，应该放在 profile 中，而不是写死在 `web/app.js` 主控制器里。
-
-这样以后换模型时，尽量只需要：
-
-1. 把新模型放进 `web/models/新模型名/`
-2. 复制 `haru.js` 为 `新模型名.js`
-3. 修改 `MODEL_PROFILE.modelPath`
-4. 根据新模型的 `model3.json` 修改 `RESPONSE_MAP`
-5. 在 `web/app.js` 顶部把 import 改到新 profile
-
-## profile 需要导出什么
+`haru.js` 是 Haru Cubism 3 模型的适配器，导出以下配置：
 
 ```javascript
 export const MODEL_PROFILE = {}
 export const COMMAND_ALIASES = {}
 export const RESPONSE_MAP = {}
-export const TEST_COMMANDS = []
+export const TEST_GROUPS = []
 ```
 
-## 哪些内容属于模型相关
+| 配置 | 职责 |
+| --- | --- |
+| `MODEL_PROFILE` | 模型路径、缩放、位置、追踪参数和默认状态 |
+| `COMMAND_ALIASES` | 兼容旧命令名称，避免协议升级后立即失效 |
+| `RESPONSE_MAP` | 通用命令到动作、表情、语音和参数效果的映射 |
+| `TEST_GROUPS` | 页面 Local Test 按钮分组，同时用于响应映射完整性检查 |
 
-- `modelPath`
-- `modelScale`
-- `modelPosition`
-- `expression`
-- `motion`
-- `motionFile`
-- `fallbackMotion`
-- 角色说话文案
-- 某个模型独有的参数 burst
+## 更换模型
 
-## 哪些内容不应该放到 profile
+1. 将新模型资源放入 `web/models/<model-name>/`
+2. 复制 `haru.js`，创建新的 Profile 文件
+3. 修改 `MODEL_PROFILE.modelPath`、缩放、位置和追踪参数
+4. 根据模型的 `.model3.json`、动作文件和表情文件重写 `RESPONSE_MAP`
+5. 为所有可触发命令配置 `TEST_GROUPS`
+6. 在 `web/app.js` 顶部切换 Profile import
+7. 使用页面 Local Test 逐项验证动作、表情、参数和语音
 
-- WebSocket 连接逻辑
+## Profile 应包含的内容
+
+- 模型资源路径、缩放和初始位置
+- 动作分组、动作索引或 `.motion3.json` 文件路径
+- 表情文件、参数 burst 和语音文案
+- 模型独有的追踪参数名称与幅度
+- Local Test 验证分组
+
+## Profile 不应包含的内容
+
+- WebSocket 连接和重连逻辑
 - UDP 协议解析
-- 头眼追踪主循环
 - DOM 面板渲染
-- 通用的 `setParams()` 调用封装
+- 通用语音开关
+- 通用的 `setParams()` 封装
+
+通过 Profile 隔离后，更换 Live2D 模型通常不需要修改 Python 手势识别链路和
+Node.js Bridge。

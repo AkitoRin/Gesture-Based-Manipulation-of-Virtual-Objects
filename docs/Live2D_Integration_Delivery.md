@@ -1,585 +1,383 @@
-# HandPilot × Live2D 集成交付说明
+# HandPilot Live2D 集成交付与调试手册
 
-## 1. 当前交付目标
+## 1. 交付范围
 
-本次集成把 HandPilot 从“只发送 UDP 命令的手势识别程序”扩展成了一个完整的 Live2D 角色交互系统：
-
-```text
-摄像头手势
-→ Python 识别与平滑
-→ UDP JSON
-→ Node Bridge
-→ WebSocket
-→ Web Live2D 页面
-→ Haru 模型动作 / 表情 / 语言 / 舞台反馈
-```
-
-核心思路是：Python 端继续专注识别，Web 端专注表现，中间用 Bridge 连接两者
-
----
-
-## 2. 新增与修改内容
-
-### 2.1 新增文件
+当前版本已经完成从摄像头手势识别到浏览器 Live2D 响应的完整链路：
 
 ```text
-bridge/
-├─ package.json                 # Node Bridge 依赖与启动脚本
-└─ udp_to_ws.js                 # UDP → WebSocket，同时提供 Live2D 网页服务
-
-web/
-├─ index.html                   # Live2D 展示页面
-├─ style.css                    # Live2D 页面视觉样式
-├─ app.js                       # WebSocket 接收、模型控制、语言气泡、口型同步
-├─ live2d_profiles/             # 模型适配层，保存不同模型的动作/表情映射
-├─ vendor/l2d/                  # 本地 l2d 运行库，避免依赖 CDN
-└─ models/
-   └─ Haru/                     # 已解压的 Haru Live2D model3 模型
-
-gesture/
-├─ hand_features.py             # 手部中心点、边界框、归一化坐标等空间特征
-├─ hand_motion.py               # 根据最近几帧判断挥动、靠近、远离等动态意图
-└─ live2d_interaction.py        # 摸头、双手应援等 Live2D 互动意图
-
-docs/
-└─ Live2D_Integration_Delivery.md
+摄像头画面
+  -> Python + MediaPipe Hands
+  -> 手势平滑、空间特征与运动判断
+  -> UDP JSON
+  -> Node.js Bridge
+  -> WebSocket
+  -> Web Live2D 动作、表情、追踪和语音
 ```
 
-### 2.2 修改文件
+当前交付包含：
 
-```text
-main.py                         # UDP 数据中加入 zone/features/motion，并支持 Live2D 互动命令
-gesture/command_mapper.py       # 将旧机械控制命令改为更自然的 Live2D 角色命令
-communication/sender.py         # 发送器加入粗略位置网格，支持头部跟随类更新
-communication/protocol.py       # 更新协议说明
-config/settings.py              # 将通信说明从 Unity 改为 Live2D Bridge
-tools/udp_receiver_test.py      # 更新端口占用提示
-```
+- 单手和双手识别
+- 12 个静态手势映射
+- 6 个连续运动响应
+- 1 个头部区域抚摸响应
+- 1 个双手组合响应
+- 20 个可触发的 Haru 模型响应
+- 头部、眼睛和身体连续追踪
+- 浏览器语音开关与 Local Test 调试面板
+- UDP 接收测试器
+- Live2D Profile 模型适配层
 
-### 2.3 当前解耦方式
+## 2. 实时链路
 
-```text
-Python 手势识别层
-→ 输出稳定命令 CMD_*
-→ Web 主控制器 app.js 负责连接、追踪、面板、通用 setParams
-→ live2d_profiles/haru.js 负责 Haru 专属动作、表情、说话文案
-```
+![HandPilot 实时通信链路](./diagrams/handpilot_realtime_link.svg)
 
-也就是说，`CMD_WAVE` 这类命令是项目协议，`haru_g_m26.motion3.json` 这类文件才是某个模型自己的资源。以后换模型时，优先新增 profile，而不是改 Python 协议。
+[查看可缩放 SVG](./diagrams/handpilot_realtime_link.svg) |
+[打开 Draw.io 可编辑源文件](./diagrams/handpilot_architecture.drawio)
 
----
+### 2.1 端口分配
 
-## 3. 系统架构图
+| 服务 | 地址 | 职责 |
+| --- | --- | --- |
+| UDP Receiver | `127.0.0.1:5005` | Bridge 接收 Python 数据包 |
+| HTTP Server | `http://127.0.0.1:8765` | Bridge 托管 Web 页面和模型资源 |
+| WebSocket | `ws://127.0.0.1:8765/ws` | Bridge 向浏览器实时推送消息 |
 
-```mermaid
-flowchart LR
-    User["用户手势"] --> Camera["Camera<br/>OpenCV 摄像头"]
-    Camera --> Detector["HandDetector<br/>MediaPipe Hands"]
-    Detector --> Finger["finger_state<br/>五指伸屈"]
-    Finger --> Classifier["gesture_classifier<br/>手势名称"]
-    Classifier --> Smoother["GestureSmoother<br/>多帧稳定"]
-    Smoother --> Mapper["command_mapper<br/>Live2D 基础命令"]
-    Mapper --> Motion["hand_motion<br/>挥动 / 靠近 / 远离"]
-    Motion --> Interaction["live2d_interaction<br/>摸头 / 双手组合"]
-    Interaction --> Sender["CommandSender<br/>UDP JSON"]
-    Sender --> Bridge["Node Bridge<br/>UDP → WebSocket"]
-    Bridge --> Web["Web 前端<br/>L2D + Canvas"]
-    Web --> Haru["Haru Live2D<br/>动作 / 表情 / 语言"]
-```
+### 2.2 端口约束
 
----
+`bridge/udp_to_ws.js` 和 `tools/udp_receiver_test.py` 都需要绑定 UDP `5005`。二者用于
+不同调试阶段，不能同时运行。
 
-## 4. 每帧数据流
+## 3. 环境安装
 
-```mermaid
-flowchart TD
-    A["main.py 主循环"] --> B["camera.read() 读取画面"]
-    B --> C["detector.process() 检测手并画骨架"]
-    C --> D["find_positions() 提取 21 点"]
-    D --> E["get_finger_state() 得到 [thumb,index,middle,ring,pinky]"]
-    E --> F["classify_gesture() 得到 raw_gesture"]
-    F --> G["smoother.update() 得到 stable_gesture"]
-    G --> H["map_gesture_to_command() 得到 base_command"]
-    H --> I["get_hand_features() 得到 center_3d / depth / palm_normal"]
-    I --> J["HandMotionTracker 得到 SWIPE / PUSH / PULL"]
-    J --> K["get_interaction_zone() 得到 head/body/free"]
-    K --> L["derive_live2d_command() 得到最终 command"]
-    L --> M{"是否双手组合？"}
-    M -- "是" --> N["derive_scene_command() 输出 CMD_DOUBLE_CHEER"]
-    M -- "否" --> O["保留单手命令"]
-    N --> P["sender.send() UDP 发包"]
-    O --> P
-    P --> Q["Bridge 转 WebSocket"]
-    Q --> R["web/app.js 执行动作、追踪、表情、说话和口型"]
-```
+### 3.1 Python 依赖
 
----
+推荐使用 Python `3.12`。当前项目虚拟环境已使用 Python `3.12.10` 验证，可以正常
+导入 OpenCV、MediaPipe 和 NumPy。Windows 系统如果安装了多个 Python 版本，应显式
+使用 `py -3.12` 创建环境。
 
-## 5. 通信链路图
-
-```mermaid
-sequenceDiagram
-    participant Python as Python main.py
-    participant UDP as UDP 127.0.0.1:5005
-    participant Bridge as bridge/udp_to_ws.js
-    participant WS as WebSocket /ws
-    participant Browser as web/app.js
-    participant Model as Haru Live2D
-
-    Python->>UDP: sendto(JSON)
-    UDP->>Bridge: gesture_command
-    Bridge->>WS: broadcast(JSON)
-    WS->>Browser: message
-    Browser->>Browser: resolveCommand()
-    Browser->>Model: playMotion / setExpression / setParams
-    Browser->>Model: ParamMouthOpenY 口型模拟
-```
-
----
-
-## 6. 手势与 Live2D 响应映射表
-
-| 手势 | 基础命令 | Live2D 响应 | 设计原因 |
-|---|---|---|---|
-| `OPEN_HAND` 张开手掌 | `CMD_WAVE` | 挥手、微笑、打招呼 | 张手更像“你好 / 我在这里”，比“启动”更自然 |
-| `FIST` 握拳 | `CMD_IDLE` | 收起动作，回到安静待机 | 握拳像暂停或收束，不适合角色兴奋回应 |
-| `INDEX_UP` 食指 | `CMD_ATTENTION` | 认真听你说 | 食指像提示重点，角色进入注意状态 |
-| `V_SIGN` 比耶 | `CMD_HAPPY_POSE` | 开心合影动作 | 避免“你比耶她点头/摇头”的不自然映射 |
-| `THUMBS_UP` 拇指上 | `CMD_PRAISE` | 开心、被夸奖、感谢 | 符合日常语义 |
-| `THUMBS_DOWN` 拇指下 | `CMD_DISAPPOINTED` | 委屈、失落 | 符合日常语义 |
-| `ROCK` 摇滚手势 | `CMD_DANCE` | 舞台动作与暖光 | 手势本身带有音乐感 |
-| `CALL` 打电话 | `CMD_TALK` | 说话气泡和通话回应 | “电话”天然对应语言效果 |
-| `THREE` 三指 | `CMD_SURPRISE` | 惊讶反应 | 作为轻量扩展手势 |
-| `FOUR` 四指 | `CMD_CHEER` | 应援鼓励 | 四指比张手更有“信号”感 |
-| `FOUR_THUMB` / `PINKY_UP` | `CMD_SHY` | 害羞表情 | 适合角色可爱反应 |
-| `OPEN_HAND` 且 `zone=head` | `CMD_PET_HEAD` | 脸红、摸头回应、说话气泡 | 用手掌位置叠加空间语义 |
-| 双手同时 `OPEN_HAND` | `CMD_DOUBLE_CHEER` | 双手应援、舞台光效 | 双手组合适合更强烈的全局反应 |
-| `UNKNOWN` | `CMD_NONE` | 保持等待 | 避免错误识别频繁打断角色 |
-
-### 6.1 动态手势与追踪响应
-
-这些命令不是单靠五指状态判断，而是根据手在最近几帧中的位置变化判断：
-
-| 手部运动 | 动态命令 | Live2D 响应 |
-|---|---|---|
-| 手明显向左滑动 | `CMD_LOOK_LEFT` | 头部、眼睛、身体向左追踪 |
-| 手明显向右滑动 | `CMD_LOOK_RIGHT` | 头部、眼睛、身体向右追踪 |
-| 手向上抬 | `CMD_JUMP_SURPRISE` | 抬头惊讶、星光舞台效果 |
-| 手向下压 | `CMD_BOW` | 低头/鞠躬式回应 |
-| 手靠近摄像头 | `CMD_COME_CLOSER` | 靠近观察、眼睛放大感 |
-| 手远离摄像头 | `CMD_STEP_BACK` | 后退留白、冷静动作 |
-
-注意：这里的 z 轴不是毫米级真实三维坐标，而是 MediaPipe 的相对深度 `lm.z` 加上手部画面占比 `depth.scale` 共同估计。它足够用于“靠近/远离”和角色跟随，但不适合做精密测距。
-
-### 6.2 当前前端实际配置的 Live2D 响应
-
-当前 Haru profile 中共配置了 19 个命令响应：
-
-| 命令 | 表情 | 动作来源 | 是否有语言 |
-|---|---|---|---|
-| `CMD_WAVE` | `F05` | `TapBody[0]` | 有 |
-| `CMD_IDLE` | `F01` | `Idle[0]` | 有 |
-| `CMD_ATTENTION` | `F02` | `motions/haru_g_m06.motion3.json` | 有 |
-| `CMD_HAPPY_POSE` | `F05` | `motions/haru_g_m26.motion3.json` | 有 |
-| `CMD_PRAISE` | `F05` | `TapBody[2]` | 有 |
-| `CMD_DISAPPOINTED` | `F08` | `TapBody[3]` | 有 |
-| `CMD_DANCE` | `F05` | `motions/haru_g_m10.motion3.json` | 有 |
-| `CMD_TALK` | `F01` | `TapBody[3]` | 有 |
-| `CMD_SURPRISE` | `F02` | `motions/haru_g_m12.motion3.json` | 有 |
-| `CMD_CHEER` | `F05` | `motions/haru_g_m24.motion3.json` | 有 |
-| `CMD_SHY` | `F07` | `motions/haru_g_m17.motion3.json` | 有 |
-| `CMD_PET_HEAD` | `F07` | `TapBody[2]` + 参数加强 | 有 |
-| `CMD_DOUBLE_CHEER` | `F05` | `motions/haru_g_m21.motion3.json` | 有 |
-| `CMD_LOOK_LEFT` | `F01` | `motions/haru_g_m03.motion3.json` + 参数加强 | 无 |
-| `CMD_LOOK_RIGHT` | `F01` | `motions/haru_g_m04.motion3.json` + 参数加强 | 无 |
-| `CMD_JUMP_SURPRISE` | `F02` | `motions/haru_g_m12.motion3.json` + 参数加强 | 有 |
-| `CMD_BOW` | `F01` | `motions/haru_g_m14.motion3.json` + 参数加强 | 无 |
-| `CMD_COME_CLOSER` | `F06` | `motions/haru_g_m18.motion3.json` + 参数加强 | 有 |
-| `CMD_STEP_BACK` | `F08` | `motions/haru_g_m19.motion3.json` + 参数加强 | 无 |
-
-这里有一个重要区别：
-
-```text
-motion / motionFile = 模型资源里已经做好的动作
-setParams / burst   = 前端实时驱动模型参数做出来的增强动作
-```
-
-所以“动作”不只有压缩包里现成的 `.motion3.json`，也可以通过参数驱动叠加出跟随、脸红、身体倾斜、眼睛追踪、围巾摆动等效果。
-
-### 6.3 Haru 压缩包实际资源
-
-Haru 当前模型目录中有：
-
-```text
-表情：8 个
-F01, F02, F03, F04, F05, F06, F07, F08
-
-动作文件：27 个
-haru_g_idle.motion3.json
-haru_g_m01.motion3.json ~ haru_g_m26.motion3.json
-```
-
-原始 `Haru.model3.json` 中正式分组注册的动作只有：
-
-```text
-Idle    = 2 个动作
-TapBody = 4 个动作
-```
-
-这里的“正式分组注册”可以理解为：`model3.json` 是 Live2D 模型的资源目录表，`Motions`
-字段告诉运行时“有哪些动作文件可以被调用，以及它们属于哪个动作组”
-
-```text
-动作文件存在于文件夹中     = 书真的放在书架上
-动作写进 model3.json 分组 = 书被写进目录索引里，可以按名字找到
-```
-
-本项目已经在 `Haru.model3.json` 中新增了 `HandPilot` 动作分组，并把
-`haru_g_m01.motion3.json ~ haru_g_m26.motion3.json` 都补进了这个分组。这样前端通过
-`playMotionByFile()` 或动作资源表查找时更稳定，不依赖运行时是否会自动扫描文件夹。
-
-### 6.4 模型格式兼容性
-
-当前 Web 端使用的 `web/vendor/l2d/index.js` 同时包含 Cubism2 和 Cubism3+/6 的加载逻辑，所以理论上可以加载：
-
-```text
-Cubism2 老模型：*.model.json + *.moc + *.mtn
-Cubism3+ 模型：*.model3.json + *.moc3 + *.motion3.json
-```
-
-但本项目目前推荐优先使用 `.model3.json` 模型。原因是 Haru profile、动作注册、表情映射、参数驱动和
-`playMotionByFile()` 都是围绕 Cubism3+ 的资源组织方式设计的。如果换成 Cubism2 老模型，可能能显示，
-但动作、表情、参数名和文件格式都需要单独适配。
-
----
-
-## 7. UDP 数据结构
-
-现在每个 UDP 包仍然是 JSON，但 `hands` 中新增了空间信息：
-
-```json
-{
-  "version": 1,
-  "type": "gesture_command",
-  "source": "HandPilot",
-  "gesture": "OPEN_HAND",
-  "command": "CMD_PET_HEAD",
-  "hand": "Left",
-  "hands": [
-    {
-      "index": 0,
-      "hand": "Left",
-      "label": "R",
-      "raw_gesture": "OPEN_HAND",
-      "gesture": "OPEN_HAND",
-      "base_command": "CMD_WAVE",
-      "command": "CMD_PET_HEAD",
-      "fingers": [1, 1, 1, 1, 1],
-      "zone": "head",
-      "motion": {
-        "type": "STILL",
-        "dx": 0.0,
-        "dy": 0.0,
-        "dscale": 0.0
-      },
-      "features": {
-        "bbox": {"x": 420, "y": 80, "w": 260, "h": 320},
-        "center": [550, 240],
-        "center_norm": [0.43, 0.33],
-        "center_3d": [0.43, 0.33, -0.031],
-        "depth": {
-          "z": -0.031,
-          "palm_z": -0.027,
-          "scale": 0.44,
-          "level": "mid"
-        },
-        "palm_normal": [0.12, -0.24, 0.96]
-      }
-    }
-  ],
-  "timestamp": 1779159700.246
-}
-```
-
-前端主要使用这些字段：
-
-```text
-command              # 最终动作命令
-hands[].command      # 每只手自己的命令
-hands[].zone         # head/body/free
-hands[].motion       # SWIPE_LEFT / PUSH_IN 等动态意图
-hands[].features     # 头眼追踪、区域判断、深度判断、调试面板显示
-timestamp            # 延迟显示
-```
-
----
-
-## 8. 启动方式
-
-### 8.1 第一次运行
-
-建议先使用 Python 3.11 或 Python 3.12 建立虚拟环境。当前项目依赖 OpenCV、MediaPipe 和 NumPy，
-不建议直接使用 Python 3.14，否则可能出现 `cv2` 或 `mediapipe` 无法安装 / 无法导入的问题。
+在项目根目录执行：
 
 ```powershell
-py -3.11 -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -U pip
 pip install -r requirements.txt
 ```
 
-安装 Bridge 依赖：
+Python 依赖：
+
+| 依赖 | 版本 | 用途 |
+| --- | --- | --- |
+| `numpy` | `1.26.4` | 数值处理 |
+| `opencv-contrib-python` | `4.11.0.86` | 摄像头读取、画面绘制与窗口显示 |
+| `mediapipe` | `0.10.21` | 手部关键点检测 |
+
+### 3.2 Node.js 依赖
+
+进入 `bridge/` 执行：
 
 ```powershell
-cd bridge
 npm install
 ```
 
-### 8.2 正常启动
+Bridge 仅依赖 `ws`：
 
-终端 1：启动 Bridge 和 Live2D 页面服务
+```json
+{
+  "ws": "^8.17.1"
+}
+```
+
+## 4. 启动方式
+
+### 4.1 完整链路
+
+终端一：启动 Bridge
 
 ```powershell
 cd bridge
 npm start
 ```
 
-看到类似输出：
+终端二：启动 Python 识别端
 
-```text
-UDP 监听已启动：127.0.0.1:5005
-Live2D 页面：http://127.0.0.1:8765
-WebSocket：ws://127.0.0.1:8765/ws
+```powershell
+python main.py
 ```
 
-然后在浏览器打开：
+浏览器访问：
 
 ```text
 http://127.0.0.1:8765
 ```
 
-终端 2：启动 Python 手势识别
+### 4.2 正常退出
+
+| 程序 | 退出方式 |
+| --- | --- |
+| `main.py` | 聚焦 OpenCV 预览窗口，按 `Esc` |
+| `npm start` | 聚焦 Bridge 终端，按 `Ctrl+C` |
+| `python -m tools.udp_receiver_test` | 聚焦测试终端，按 `Ctrl+C` |
+
+`main.py` 的正常退出路径会释放摄像头、UDP Socket 和 OpenCV 窗口资源。
+
+## 5. 分段调试
+
+完整链路由 Python 识别端、Node.js Bridge 和 Web 页面三段组成。出现问题时，不需要
+同时排查所有模块。
+
+### 5.1 只验证 Python UDP 发包
+
+先关闭 Bridge，再在项目根目录执行：
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
-python main.py
-```
-
-然后对摄像头做手势，Live2D 页面会实时响应
-
-### 8.3 快速判断是否启动成功
-
-```text
-1. OpenCV 摄像头窗口能打开
-2. Live2D 页面右侧显示 WebSocket 已连接
-3. Bridge 终端能看到 UDP 日志
-4. Live2D 角色会根据手势播放动作、表情、语言或追踪反馈
-```
-
-退出方式：
-
-```text
-Python 主程序：按 Esc
-Bridge 服务：按 Ctrl+C
-```
-
----
-
-## 9. 调试方式
-
-### 9.1 只测试前端
-
-打开 `http://127.0.0.1:8765` 后，可以点击页面右侧 `Local Test` 按钮，不开摄像头也能触发动作
-
-### 9.2 只测试 UDP
-
-如果不启动 Bridge，可以单独运行：
-
-```bash
 python -m tools.udp_receiver_test
 ```
 
-注意：`tools/udp_receiver_test.py` 和 `bridge/udp_to_ws.js` 不能同时占用 `127.0.0.1:5005`
+新开终端执行：
 
-### 9.3 常见问题
-
-| 问题 | 原因 | 处理 |
-|---|---|---|
-| Live2D 页面打开但没有模型 | l2d 本地运行库或模型路径异常 | 看浏览器 F12 Console，确认 `web/vendor/l2d/` 和 `web/models/Haru/` 存在 |
-| Bridge 启动失败 | 端口 5005 或 8765 被占用 | 关闭旧进程，或改环境变量 |
-| Python 有识别但模型不动 | Bridge 没开或 WebSocket 未连接 | 确认页面右侧显示 WebSocket 已连接 |
-| 没有声音 | 浏览器自动播放策略限制 | 点击页面里的“开启角色声音” |
-| 摸头不触发 | 手没有进入上方中间区域 | 手掌放到画面上方中间，保持张手 |
-| `ModuleNotFoundError: No module named 'cv2'` | 当前终端 Python 环境没有安装 OpenCV | 激活 `.venv` 后重新安装 `requirements.txt` |
-| `mediapipe` 安装失败 | Python 版本过新或依赖轮子不匹配 | 优先使用 Python 3.11 / 3.12 |
-| `__pycache__` 写入失败 | OneDrive 或编辑器锁定了缓存文件 | 关闭占用进程，必要时删除对应 `__pycache__` 后重试 |
-
----
-
-## 10. 关于语言、表情、动作和服饰效果
-
-### 10.1 语言效果
-
-当前实现为“说话气泡 + 逐字显示 + `ParamMouthOpenY` 口型模拟”
-
-这比直接播放固定音频更容易扩展，后续可以接入 TTS 或提前录制的角色语音
-
-### 10.2 表情效果
-
-Haru 提供 `F01` ~ `F08` 8 个表情，本次映射中重点使用：
-
-```text
-F01  普通微笑
-F02  惊讶/认真
-F05  开心闭眼
-F07  害羞脸红
-F08  低落/不满
+```powershell
+python main.py
 ```
 
-### 10.3 动作效果
+接收器会打印来源地址、摘要、延迟估计、协议检查结果和 JSON 内容。
 
-Haru 的原始 `model3.json` 明确配置了 `Idle` 与 `TapBody` 两组动作。本项目为了让手势交互更稳定，
-额外补充了 `HandPilot` 动作分组，用来集中注册 `m01 ~ m26` 这批可交互动作。
+### 5.2 只验证 Web Live2D 响应
 
-前端优先使用：
+启动 Bridge 并打开页面：
 
-```text
-playMotion(group, index, priority)
-playMotionByFile(file, priority)
+```powershell
+cd bridge
+npm start
 ```
 
-这样既保留原模型结构，又能更可靠地调用更多动作资源
-
-### 10.4 服饰效果
-
-当前 Haru 模型只有一套制服部件，没有多套衣装贴图或衣装切换参数
-
-所以本次实现的是“服饰氛围效果”：
-
 ```text
-soft   制服柔光
-calm   冷静浅蓝
-blush  害羞粉光
-dance  舞台暖光
+http://127.0.0.1:8765
 ```
 
-同时前端会尝试驱动 `ParamScarf`，让围巾/服饰细节在舞台模式中更活跃
+使用页面右侧 Local Test 按钮，不启动摄像头也可以逐项验证动作、表情、语音和舞台效果。
 
-如果后续换成有多套衣装参数的 Live2D 模型，可以把 `web/app.js` 里的 `setCostumeEffect()` 扩展为真实换装
+### 5.3 验证完整链路
 
----
+1. 启动 Bridge
+2. 打开 Web 页面，确认 WebSocket 显示已连接
+3. 启动 `python main.py`
+4. 做出张开手掌、握拳、剪刀手等静态手势
+5. 再测试左右挥动、上下移动、推近、拉远、摸头和双手张开
 
-## 10.5 更换 Live2D 模型的工作量
+## 6. 手势与通用命令
 
-如果新模型也是标准 Cubism 3/4/6 的 `.model3.json`，工作量通常不大：
+### 6.1 静态手势
 
-```text
-轻度替换：只换模型路径和缩放位置，约 10~20 分钟
-中度适配：重新挑选动作/表情映射，约 1~2 小时
-深度演出：自定义动作、参数、语音、服饰、热点区域，按效果复杂度增加
-```
+| 手势 | 识别名称 | 通用命令 | 交互语义 |
+| --- | --- | --- | --- |
+| 张开手掌 | `OPEN_HAND` | `CMD_WAVE` | 挥手回应 |
+| 握拳 | `FIST` | `CMD_IDLE` | 安静待机 |
+| 食指朝上 | `INDEX_UP` | `CMD_ATTENTION` | 认真听你说 |
+| 剪刀手 | `V_SIGN` | `CMD_HAPPY_POSE` | 开心合影 |
+| 拇指朝上 | `THUMBS_UP` | `CMD_PRAISE` | 被夸奖 |
+| 拇指朝下 | `THUMBS_DOWN` | `CMD_DISAPPOINTED` | 失落反馈 |
+| 摇滚手势 | `ROCK` | `CMD_DANCE` | 舞台活跃 |
+| 打电话手势 | `CALL` | `CMD_TALK` | 通话回应 |
+| 三根手指 | `THREE` | `CMD_SURPRISE` | 惊讶反应 |
+| 四根手指 | `FOUR` | `CMD_CHEER` | 应援鼓励 |
+| 拇指加三指 | `FOUR_THUMB` | `CMD_SHY` | 害羞回应 |
+| 只伸小指 | `PINKY_UP` | `CMD_PROMISE` | 拉钩约定 |
 
-推荐换模型流程：
+### 6.2 连续运动
 
-1. 把新模型放到 `web/models/ModelName/`
-2. 打开新模型的 `*.model3.json`，确认 `Expressions`、`Motions`、`HitAreas`
-3. 复制 `web/live2d_profiles/haru.js` 为 `web/live2d_profiles/model_name.js`
-4. 修改 `MODEL_PROFILE.modelPath`、`modelScale`、`modelPosition`
-5. 把 `RESPONSE_MAP` 中的 `expression` 和 `motionFile` 换成新模型真实存在的资源
-6. 在 `web/app.js` 顶部 import 新 profile
+| 手部运动 | 运动名称 | 通用命令 | 交互语义 |
+| --- | --- | --- | --- |
+| 向左挥动 | `SWIPE_LEFT` | `CMD_LOOK_LEFT` | 向左追踪 |
+| 向右挥动 | `SWIPE_RIGHT` | `CMD_LOOK_RIGHT` | 向右追踪 |
+| 快速上抬 | `RAISE_UP` | `CMD_JUMP_SURPRISE` | 抬手惊喜 |
+| 快速下移 | `MOVE_DOWN` | `CMD_BOW` | 低头回应 |
+| 推近镜头 | `PUSH_IN` | `CMD_COME_CLOSER` | 靠近观察 |
+| 拉远镜头 | `PULL_OUT` | `CMD_STEP_BACK` | 后退留白 |
 
-需要注意：
+### 6.3 空间与双手交互
 
-- 不同模型的表情名不一定是 `F01`、`F02`
-- 不同模型的动作组不一定叫 `Idle`、`TapBody`
-- 有些模型没有声音文件或没有 HitAreas
-- 有些模型没有 `ParamTere`、`ParamScarf` 这类参数，burst 参数需要按模型实际参数调整
-- 如果模型有真实换装参数，才能做真正服饰切换；否则只能做现在这种舞台光效模拟
+| 条件 | 通用命令 | 交互语义 |
+| --- | --- | --- |
+| `OPEN_HAND`、`FOUR` 或 `FOUR_THUMB` 位于头部区域 | `CMD_PET_HEAD` | 摸头害羞 |
+| 两只手同时为 `OPEN_HAND` | `CMD_DOUBLE_CHEER` | 双手应援 |
 
----
+## 7. Haru 模型响应
 
-## 11. 后续优化建议
+### 7.1 模型资源
 
-1. 用更稳定的几何规则识别“抚摸”动作，例如检测手掌在头部区域内的横向小幅移动
-2. 给 Python 端增加 `--no-preview`，演示时只开 Live2D 页面
-3. 给 Web 端加模型选择器，支持 Haru / Mao / Hiyori 等多角色
-4. 把 Bridge 升级成 Electron 主进程，最终做成一个桌面应用
-5. 如果模型资源允许，增加真实换装、饰品显隐和更丰富的角色语音
-
----
-
-## 12. BanG Dream / Bandori 模型调研
-
-当前能找到一些 BanG Dream 相关的公开 Live2D 资源或查看器，但需要注意“能看到资源”和“能直接接入本项目”不是一回事。
-
-### 12.1 可参考资源
-
-```text
-Live2D 官方案例 / 访谈
-说明 BanG Dream! Girls Band Party! 确实使用了 Live2D 技术
-
-seia-soto/BanG-Dream-Live2D
-公开 GitHub 归档，包含大量 Bandori 角色与服装资源
-
-Bestdori Live2D Viewer
-Bandori 社区工具，适合查看角色、服装、动作和差分
-
-Haneoka BanG Dream! Live2D / Spine 查看器
-第三方在线查看器，支持 Live2D 与 Spine 预览和导出
-```
-
-### 12.2 格式判断
-
-我实际检查了 `seia-soto/BanG-Dream-Live2D` 仓库的文件树，它主要是 Cubism2 老资源：
+当前模型位于：
 
 ```text
-*.model.json
-*.moc
-*.mtn
-*.exp
+web/models/Haru/
 ```
 
-没有看到 Cubism3+ 常见的：
+资源清单：
+
+| 资源 | 数量 | 说明 |
+| --- | --- | --- |
+| 表情文件 | `8` | `F01 ~ F08` |
+| 动作文件 | `27` | `haru_g_idle.motion3.json` 和 `haru_g_m01 ~ m26.motion3.json` |
+| `Idle` 分组 | `2` | 默认待机动作 |
+| `TapBody` 分组 | `4` | 模型原有点击身体动作 |
+| `HandPilot` 分组 | `26` | 为 HandPilot 补充注册的 `m01 ~ m26` 动作 |
+
+### 7.2 动作分组注册
+
+`.motion3.json` 文件存在于模型目录中，不等于渲染库能够通过分组名称和索引调用它。
+`Haru.model3.json` 的 `FileReferences.Motions` 用于登记动作分组：
+
+```json
+{
+  "Motions": {
+    "Idle": [],
+    "TapBody": [],
+    "HandPilot": []
+  }
+}
+```
+
+当前 Haru 模型已经将 `m01 ~ m26` 注册到 `HandPilot` 分组。`web/app.js` 优先按
+`motionFile` 解析对应动作，并保留 `fallbackMotion` 作为兜底。换用其他 Web Live2D
+库或其他模型时，仍应检查动作是否完成注册。
+
+### 7.3 响应对照表
+
+| 通用命令 | Haru 动作 | 表情 | 语音 |
+| --- | --- | --- | --- |
+| `CMD_WAVE` | `m05` | `F05` | 你好呀，我看到你的手势啦 |
+| `CMD_LOOK_LEFT` | `m03` | `F01` | 无 |
+| `CMD_LOOK_RIGHT` | `m04` | `F01` | 无 |
+| `CMD_JUMP_SURPRISE` | `m12` | `F02` | 欸？手突然抬起来了 |
+| `CMD_BOW` | `m14` | `F01` | 无 |
+| `CMD_COME_CLOSER` | `m18` | `F06` | 你靠近了，我看得更清楚啦 |
+| `CMD_STEP_BACK` | `m19` | `F08` | 无 |
+| `CMD_IDLE` | `Idle[0]` | `F01` | 好，我先安静一下 |
+| `CMD_ATTENTION` | `m06` | `F02` | 嗯，我在听，请继续 |
+| `CMD_HAPPY_POSE` | `m26` | `F05` | 耶，这个手势很适合拍照 |
+| `CMD_PRAISE` | `m08` | `F05` | 谢谢夸奖，我会继续加油 |
+| `CMD_DISAPPOINTED` | `m13` | `F08` | 我会再调整一下，不要失望嘛 |
+| `CMD_DANCE` | `m10` | `F05` | 节奏来了，进入舞台模式 |
+| `CMD_TALK` | `m07` | `F01` | 喂喂，HandPilot 通信正常 |
+| `CMD_SURPRISE` | `m11` | `F02` | 哇，三根手指触发了惊喜 |
+| `CMD_CHEER` | `m24` | `F05` | 收到四指信号，给你加油 |
+| `CMD_SHY` | `m17` | `F07` | 这个手势有点可爱，我有点害羞 |
+| `CMD_PROMISE` | `m16` | `F07` | 勾一下小指，这是我们的约定哦 |
+| `CMD_PET_HEAD` | `m22` | `F07` | 唔，被摸头了，有点害羞 |
+| `CMD_DOUBLE_CHEER` | `m21` | `F05` | 双手同步，能量满格 |
+
+语音不是每个连续运动都强制播放。左右追踪、低头和后退等高频动作保持无语音，避免
+频繁播报干扰交互。
+
+### 7.4 头眼追踪
+
+手部中心坐标和尺度会持续映射到模型参数：
 
 ```text
-*.model3.json
-*.moc3
-*.motion3.json
-*.exp3.json
+ParamAngleX / ParamAngleY / ParamAngleZ
+ParamEyeBallX / ParamEyeBallY / ParamEyeBallForm
+ParamFaceForm
+ParamBodyAngleX / ParamBodyAngleY / ParamBodyAngleZ
+ParamBodyUpper
+ParamBreath
+ParamScarf
+ParamHairFront / ParamHairSide
+ParamTere
 ```
 
-所以这类 Bandori 资源更适合走“Cubism2 兼容路线”。我们当前前端运行库理论上有 Cubism2 加载分支，
-但 Haru profile、动作调用、表情映射和参数驱动主要按 Cubism3+ 组织。直接替换成 Bandori 老模型时，
-需要额外做这些适配：
+模型会围绕画面中的手部位置转动头部和眼睛。UDP 相同状态每隔 `0.3` 秒重复发送一次，
+浏览器追踪数据新鲜度窗口为 `1.5` 秒，避免手部静止时模型过早回到中央。
 
-```text
-1. 确认 model.json 是否完整引用 moc、textures、motions、expressions
-2. 把 .mtn 动作映射到 HandPilot 的 CMD_* 命令
-3. 把 .exp 表情映射到 RESPONSE_MAP
-4. 检查参数名是否支持头部、眼睛、身体追踪
-5. 如有必要，为老模型单独写 bandori_cubism2.js profile
-```
+### 7.5 舞台效果与服饰边界
 
-### 12.3 版权提醒
+Profile 中的 `costume` 字段用于切换页面舞台视觉主题，例如 `soft`、`focus`、`spark`、
+`calm`、`dance` 和 `blush`。它不是 Live2D 服装贴图切换。
 
-公开上传不等于可以商用或再分发。Bandori 相关角色、素材、商标通常仍归原权利方所有。
-如果只是本地学习和技术验证，风险相对低；如果要公开发布、参赛、上线网站或打包成应用，就应该优先使用：
+如果需要真正更换服饰，模型本身必须提供对应的部件、纹理或参数开关，再在 Profile
+中增加相应映射。
 
-```text
-1. 官方明确允许使用的模型
-2. 创作者授权的同人模型
-3. 自己制作或约稿并获得授权的模型
-4. Live2D 官方样例模型或可商用素材包
-```
+## 8. 更换 Live2D 模型
 
----
+### 8.1 当前兼容范围
 
-## 13. 参考来源
+当前页面已经使用 Haru Cubism 3 的 `.model3.json` 资源完成验证。其他 Cubism 3 模型
+可以沿用 Profile 适配方式。Cubism 2 或模型结构差异较大的资源需要单独验证渲染库和
+参数名称。
 
-- l2d 官方文档：https://l2d.hacxy.cn
-- l2d npm 包：https://www.npmjs.com/package/l2d
-- Live2D 官方 BanG Dream! 案例：https://www.live2d.com/business/interview/bangdream/
-- BanG Dream Live2D GitHub 归档：https://github.com/seia-soto/BanG-Dream-Live2D
-- Bestdori Live2D Viewer：https://bestdori.com/tool/live2dviewer
-- Haneoka BanG Dream! Live2D / Spine 查看器：https://live2d.haneoka.org/
-- Live2D Cubism SDK 许可说明：https://www.live2d.com/eula/live2d-proprietary-software-license-agreement_en.html
+### 8.2 换模步骤
+
+1. 将新模型资源放入 `web/models/<model-name>/`
+2. 确认模型入口文件、动作文件和表情文件可以被浏览器访问
+3. 检查 `.model3.json` 的 `FileReferences.Motions` 和 `Expressions`
+4. 复制 `web/live2d_profiles/haru.js` 创建新 Profile
+5. 修改 `MODEL_PROFILE.modelPath`、缩放、位置和追踪参数
+6. 根据新模型资源重写 `RESPONSE_MAP`
+7. 为所有响应补齐 `TEST_GROUPS`
+8. 在 `web/app.js` 顶部切换 Profile import
+9. 使用 Local Test 逐项验证动作、表情、语音和参数效果
+10. 再启动 Python 端验证完整手势链路
+
+### 8.3 换模工作量判断
+
+| 模型情况 | 工作量 | 说明 |
+| --- | --- | --- |
+| Cubism 3，动作和表情完整 | 较低 | 主要修改 Profile 映射 |
+| Cubism 3，但动作分组未注册 | 中等 | 需要补充 `model3.json` 分组或调整调用方式 |
+| 参数名称差异较大 | 中等 | 需要调整追踪参数 |
+| 缺少目标动作、表情或服饰部件 | 较高 | 需要在 Live2D 编辑器中制作或替换资源 |
+| Cubism 2 或来源不明的资源 | 较高 | 需要额外验证格式、渲染库兼容性和授权范围 |
+
+## 9. 常见问题
+
+### 9.1 Bridge 提示 UDP 端口绑定失败
+
+原因通常是另一个 Bridge 或 `tools.udp_receiver_test` 已经占用 `5005`。关闭占用端口
+的程序后重试。
+
+### 9.2 页面能够打开，但 WebSocket 未连接
+
+检查：
+
+1. Bridge 是否仍在运行
+2. 页面是否从 `http://127.0.0.1:8765` 打开
+3. `bridge/udp_to_ws.js` 中 WebSocket 路径是否为 `/ws`
+4. 浏览器控制台是否有连接错误
+
+### 9.3 WebSocket 已连接，但模型不响应手势
+
+按顺序检查：
+
+1. `config/settings.py` 中 `COMMUNICATION_ENABLED = True`
+2. Python 仪表盘是否显示 UDP `ON`
+3. Bridge 终端是否收到 UDP 消息
+4. 页面控制面板是否更新 `Gesture` 和 `Command`
+5. Local Test 是否能触发对应模型响应
+
+### 9.4 模型能够响应，但动作差异不明显
+
+检查 Profile 中不同命令是否仍指向相同动作文件。Haru Profile 已为 20 个命令配置
+不同动作、表情或参数变化，但模型本身的可动范围仍会限制最终效果。
+
+### 9.5 头眼追踪偶尔回到中央
+
+检查：
+
+1. Python 端是否持续运行
+2. `COMM_REPEAT_INTERVAL` 是否保持为 `0.3`
+3. Bridge 是否持续转发消息
+4. 浏览器是否长时间未收到手部位置数据
+
+## 10. 交付文件
+
+| 路径 | 用途 |
+| --- | --- |
+| `main.py` | Python 主程序 |
+| `config/settings.py` | 全局参数 |
+| `gesture/` | 手势、空间和运动识别 |
+| `communication/` | UDP 协议和发送器 |
+| `tools/udp_receiver_test.py` | UDP 手动测试器 |
+| `bridge/udp_to_ws.js` | UDP -> WebSocket Bridge |
+| `web/app.js` | Live2D 页面控制器 |
+| `web/live2d_profiles/haru.js` | Haru 模型适配器 |
+| `web/models/Haru/` | Haru 模型资源 |
+| `docs/HandPilot_Project_Description.md` | 系统设计说明 |
+| `docs/diagrams/` | SVG 图表和 Draw.io 可编辑源文件 |
