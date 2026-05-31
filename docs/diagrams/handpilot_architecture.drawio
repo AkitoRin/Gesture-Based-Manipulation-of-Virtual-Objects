@@ -1,0 +1,191 @@
+<mxfile host="65bd71144e">
+    <diagram id="01-system-architecture" name="01 System Architecture">
+        <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="camera" value="01 视觉采集&amp;#xa;OpenCV Camera&amp;#xa;MediaPipe Hands&amp;#xa;21 点 + 相对 Z 深度" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#E8F6EF;strokeColor=#248B68;fontColor=#176B51;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="220" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="preview" value="本地预览&amp;#xa;骨架 / FPS / UDP / 双手卡片" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#F2F4F7;strokeColor=#7A8793;fontColor=#4E5964;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="340" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="python" value="02 Python HandPilot&amp;#xa;识别、稳定化、空间语义与命令决策" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#FFF1E6;strokeColor=#D77635;fontColor=#A94F1C;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="80" width="360" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="perception" value="感知层&amp;#xa;finger_state.py&amp;#xa;gesture_classifier.py" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#E8F6EF;strokeColor=#248B68;fontColor=#176B51;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="240" width="180" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="smoother" value="稳定层&amp;#xa;gesture_smoother.py&amp;#xa;7 帧窗口 / 4 票确认" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#EAF3FF;strokeColor=#3B79C9;fontColor=#255A99;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="240" width="180" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="interaction" value="交互层&amp;#xa;hand_features.py&amp;#xa;hand_motion.py" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#F0EEFF;strokeColor=#7564CD;fontColor=#5142A6;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="390" width="180" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="sender" value="输出层&amp;#xa;command_mapper.py&amp;#xa;protocol.py / sender.py" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#FFF7DF;strokeColor=#C28B22;fontColor=#906412;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="390" width="180" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="bridge" value="03 Node.js Bridge&amp;#xa;UDP 5005 -&amp;gt; WebSocket /ws&amp;#xa;HTTP 8765" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#EAF3FF;strokeColor=#3B79C9;fontColor=#255A99;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="840" y="120" width="240" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="web" value="04 Web Live2D&amp;#xa;动作 / 表情 / 追踪 / TTS&amp;#xa;Local Test" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#FCEBF1;strokeColor=#C65B83;fontColor=#983C60;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="840" y="360" width="240" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="a1" value="frame" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="camera" target="python" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="python" target="perception" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="perception" target="smoother" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="smoother" target="interaction" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="interaction" target="sender" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a6" value="UDP JSON" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="sender" target="bridge" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a7" value="WebSocket" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="bridge" target="web" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="camera" target="preview" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a9" value="state" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="sender" target="preview" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="02-frame-pipeline" name="02 Frame Pipeline">
+        <mxGraphModel dx="699" dy="426" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="read" value="1 读取画面&amp;#xa;Camera.read()" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#E8F6EF;strokeColor=#248B68;fontColor=#176B51;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="80" width="170" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="detect" value="2 检测手部&amp;#xa;HandDetector.process()" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#E8F6EF;strokeColor=#248B68;fontColor=#176B51;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="260" y="80" width="190" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="position" value="3 提取关键点&amp;#xa;[id, x, y, z]" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#E8F6EF;strokeColor=#248B68;fontColor=#176B51;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="80" width="190" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="hands" value="4 遍历双手" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#E8F6EF;strokeColor=#248B68;fontColor=#176B51;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="740" y="80" width="170" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="finger" value="5 手指状态&amp;#xa;get_finger_state()" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#EAF3FF;strokeColor=#3B79C9;fontColor=#255A99;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="260" width="180" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="classify" value="6 静态分类&amp;#xa;classify_gesture()" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#EAF3FF;strokeColor=#3B79C9;fontColor=#255A99;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="270" y="260" width="180" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="smooth" value="7 多帧平滑&amp;#xa;7 帧 / 4 票确认" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#EAF3FF;strokeColor=#3B79C9;fontColor=#255A99;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="260" width="180" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="feature" value="8 空间与运动&amp;#xa;Z 轴 / 区域 / 趋势" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#F0EEFF;strokeColor=#7564CD;fontColor=#5142A6;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="730" y="260" width="180" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="intent" value="9 命令决策&amp;#xa;动态运动 &amp;gt; 摸头 &amp;gt; 静态手势" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#FFF7DF;strokeColor=#C28B22;fontColor=#906412;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="960" y="260" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="scene" value="10 双手场景&amp;#xa;derive_scene_command()" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#FFF1E6;strokeColor=#D77635;fontColor=#A94F1C;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="450" width="210" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="send" value="11 UDP 发送&amp;#xa;CommandSender.send()" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#FFF1E6;strokeColor=#D77635;fontColor=#A94F1C;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="450" width="210" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="dashboard" value="12 本地仪表盘&amp;#xa;render_dashboard()" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#F2F4F7;strokeColor=#7A8793;fontColor=#4E5964;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="450" width="210" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="next" value="13 下一帧&amp;#xa;Esc 退出，否则继续" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#F2F4F7;strokeColor=#7A8793;fontColor=#4E5964;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="450" width="210" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="read" target="detect" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="detect" target="position" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="position" target="hands" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="hands" target="finger" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="finger" target="classify" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="classify" target="smooth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="smooth" target="feature" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="feature" target="intent" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="intent" target="scene" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="scene" target="send" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="send" target="dashboard" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="dashboard" target="next" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p13" value="loop" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="next" target="read" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="03-realtime-link" name="03 Realtime Link">
+        <mxGraphModel dx="699" dy="426" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="sender" value="Python Sender&amp;#xa;protocol.py / sender.py&amp;#xa;gesture_command JSON" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#E8F6EF;strokeColor=#248B68;fontColor=#176B51;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="140" width="220" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="udp" value="UDP 通道&amp;#xa;127.0.0.1:5005&amp;#xa;状态节流" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#FFF1E6;strokeColor=#D77635;fontColor=#A94F1C;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="140" width="220" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="bridge" value="Node Bridge&amp;#xa;udp_to_ws.js&amp;#xa;WebSocket 广播" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#EAF3FF;strokeColor=#3B79C9;fontColor=#255A99;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="620" y="140" width="220" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="browser" value="Web Live2D&amp;#xa;127.0.0.1:8765&amp;#xa;动作 / 表情 / 追踪 / TTS" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#F0EEFF;strokeColor=#7564CD;fontColor=#5142A6;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="910" y="140" width="240" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="packet" value="gesture_command 数据包&amp;#xa;gesture / command / hand / hands[] / timestamp" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#FCEBF1;strokeColor=#C65B83;fontColor=#983C60;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="380" width="510" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="debug" value="调试路径&amp;#xa;UDP receiver 与 Bridge 不能同时绑定 5005&amp;#xa;Local Test 可独立验证浏览器模型响应" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#F2F4F7;strokeColor=#7A8793;fontColor=#4E5964;fontSize=14;fontStyle=1;spacing=8;" parent="1" vertex="1">
+                    <mxGeometry x="620" y="380" width="530" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="r1" value="JSON" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="sender" target="udp" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="r2" value="datagram" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="udp" target="bridge" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="r3" value="WebSocket /ws" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="bridge" target="browser" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="r4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="sender" target="packet" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="r5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;fontColor=#4E5964;fontSize=12;" parent="1" source="bridge" target="debug" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

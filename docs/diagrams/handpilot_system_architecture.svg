@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="720" viewBox="0 0 1260 720">
+  <title>HandPilot 系统架构</title>
+  <desc>从摄像头手部画面到 Live2D 动作、表情和追踪反馈的完整链路</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#59636E" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#667085"/>
+    </marker>
+  </defs>
+  <rect width="1260" height="720" fill="#FCFBF8"/>
+  <rect x="24" y="22" width="1212" height="676" rx="26" fill="#FFFFFF" stroke="#E6E9ED"/>
+  <text x="58" y="76" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="30" font-weight="750" fill="#24313A">HandPilot 系统架构</text>
+  <text x="58" y="105" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#667085">从摄像头手部画面到 Live2D 动作、表情和追踪反馈的完整链路</text>
+  <line x1="58" y1="128" x2="1202" y2="128" stroke="#E1E6EA"/>
+  <rect x="58" y="176" width="232" height="190" rx="20" fill="#E8F6EF" stroke="#248B68" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="80" y="211" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#176B51">01 视觉采集</text>
+<text x="80" y="238" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">OpenCV Camera</text>
+<text x="80" y="263" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">1280 x 720 摄像头画面</text>
+<text x="80" y="288" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">镜像翻转与清晰度增强</text>
+<text x="80" y="313" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">MediaPipe Hands</text>
+<text x="80" y="338" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">21 个关键点 + 相对 Z 深度</text>
+<rect x="58" y="430" width="232" height="156" rx="20" fill="#F2F4F7" stroke="#7A8793" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="80" y="465" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#4E5964">本地预览</text>
+<text x="80" y="492" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">OpenCV 可视化窗口</text>
+<text x="80" y="517" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">手部骨架与关键点</text>
+<text x="80" y="542" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">FPS / UDP / 双手状态</text>
+<text x="80" y="567" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">Esc 安全退出</text>
+<rect x="345" y="158" width="490" height="458" rx="20" fill="#FFF1E6" stroke="#D77635" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="367" y="193" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="22" font-weight="700" fill="#A94F1C">02 Python HandPilot</text>
+<text x="367" y="216" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12" font-weight="600" fill="#D77635">识别、稳定化、空间语义与命令决策</text>
+<rect x="375" y="250" width="200" height="118" rx="20" fill="#E8F6EF" stroke="#248B68" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="397" y="285" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#176B51">感知层</text>
+<text x="397" y="312" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">finger_state.py</text>
+<text x="397" y="333" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">gesture_classifier.py</text>
+<text x="397" y="354" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">静态手势规则识别</text>
+<rect x="600" y="250" width="200" height="118" rx="20" fill="#EAF3FF" stroke="#3B79C9" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="622" y="285" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#255A99">稳定层</text>
+<text x="622" y="312" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">gesture_smoother.py</text>
+<text x="622" y="333" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">7 帧窗口 / 4 票确认</text>
+<text x="622" y="354" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">降低短时抖动误判</text>
+<rect x="375" y="397" width="200" height="134" rx="20" fill="#F0EEFF" stroke="#7564CD" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="397" y="432" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#5142A6">交互层</text>
+<text x="397" y="459" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">hand_features.py</text>
+<text x="397" y="480" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">中心位置 / Z 轴 / 尺度</text>
+<text x="397" y="501" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">区域与连续运动判断</text>
+<text x="397" y="522" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">双手场景组合</text>
+<rect x="600" y="397" width="200" height="134" rx="20" fill="#FFF7DF" stroke="#C28B22" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="622" y="432" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#906412">输出层</text>
+<text x="622" y="459" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">command_mapper.py</text>
+<text x="622" y="480" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">live2d_interaction.py</text>
+<text x="622" y="501" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">protocol.py / sender.py</text>
+<text x="622" y="522" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">UDP JSON 数据包</text>
+<rect x="900" y="176" width="302" height="174" rx="20" fill="#EAF3FF" stroke="#3B79C9" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="922" y="211" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#255A99">03 Node.js Bridge</text>
+<text x="922" y="238" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">udp_to_ws.js</text>
+<text x="922" y="263" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">接收 UDP 127.0.0.1:5005</text>
+<text x="922" y="288" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">推送 WebSocket /ws</text>
+<text x="922" y="313" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">托管静态页面 127.0.0.1:8765</text>
+<rect x="900" y="408" width="302" height="198" rx="20" fill="#FCEBF1" stroke="#C65B83" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="922" y="443" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#983C60">04 Web Live2D</text>
+<text x="922" y="470" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">app.js + Live2D Profile</text>
+<text x="922" y="495" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">动作文件与表情联动</text>
+<text x="922" y="520" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">头部 / 眼睛跟随手部移动</text>
+<text x="922" y="545" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">浏览器 SpeechSynthesis 语音</text>
+<text x="922" y="570" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">Local Test 独立验证模型响应</text>
+<path d="M 290 270 L 345 270" fill="none" stroke="#667085" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="295" y="240" width="54" height="23" rx="11" fill="#FCFBF8" opacity="0.96"/>
+<text x="302" y="257" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12" font-weight="700" fill="#667085">frame</text>
+<path d="M 290 500 L 322 500 L 322 570 L 345 570" fill="none" stroke="#667085" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<path d="M 835 500 L 868 500 L 868 265 L 900 265" fill="none" stroke="#667085" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="837" y="468" width="78" height="23" rx="11" fill="#FCFBF8" opacity="0.96"/>
+<text x="844" y="485" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12" font-weight="700" fill="#667085">UDP JSON</text>
+<path d="M 1050 350 L 1050 408" fill="none" stroke="#667085" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1055" y="372" width="86" height="23" rx="11" fill="#FCFBF8" opacity="0.96"/>
+<text x="1062" y="389" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12" font-weight="700" fill="#667085">WebSocket</text>
+<text x="58" y="668" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="15" font-weight="650" fill="#4E5964">核心原则：摄像头采集、手势决策、网络转发与模型表现保持模块解耦，可分别调试和替换</text>
+</svg>

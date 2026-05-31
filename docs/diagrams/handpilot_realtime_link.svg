@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="704" viewBox="0 0 1260 704">
+  <title>HandPilot 实时通信链路</title>
+  <desc>UDP 负责 Python 到 Bridge 的本机传输，WebSocket 负责 Bridge 到浏览器的实时推送</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#59636E" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#667085"/>
+    </marker>
+  </defs>
+  <rect width="1260" height="704" fill="#FCFBF8"/>
+  <rect x="24" y="22" width="1212" height="660" rx="26" fill="#FFFFFF" stroke="#E6E9ED"/>
+  <text x="58" y="76" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="30" font-weight="750" fill="#24313A">HandPilot 实时通信链路</text>
+  <text x="58" y="105" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#667085">UDP 负责 Python 到 Bridge 的本机传输，WebSocket 负责 Bridge 到浏览器的实时推送</text>
+  <line x1="58" y1="128" x2="1202" y2="128" stroke="#E1E6EA"/>
+  <rect x="62" y="200" width="214" height="150" rx="20" fill="#E8F6EF" stroke="#248B68" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="84" y="235" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#176B51">Python Sender</text>
+<text x="84" y="262" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">main.py</text>
+<text x="84" y="283" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">protocol.py</text>
+<text x="84" y="304" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">sender.py</text>
+<text x="84" y="325" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">序列化 gesture_command</text>
+<rect x="342" y="200" width="214" height="150" rx="20" fill="#FFF1E6" stroke="#D77635" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="364" y="235" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#A94F1C">UDP 通道</text>
+<text x="364" y="262" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">127.0.0.1:5005</text>
+<text x="364" y="283" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">低开销本机传输</text>
+<text x="364" y="304" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">变化立即发送</text>
+<text x="364" y="325" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">重复状态节流</text>
+<rect x="622" y="200" width="214" height="150" rx="20" fill="#EAF3FF" stroke="#3B79C9" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="644" y="235" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#255A99">Node Bridge</text>
+<text x="644" y="262" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">udp_to_ws.js</text>
+<text x="644" y="283" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">接收 UDP JSON</text>
+<text x="644" y="304" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">WebSocket 广播</text>
+<text x="644" y="325" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">静态资源托管</text>
+<rect x="902" y="200" width="292" height="150" rx="20" fill="#F0EEFF" stroke="#7564CD" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="924" y="235" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#5142A6">Web Live2D</text>
+<text x="924" y="262" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">http://127.0.0.1:8765</text>
+<text x="924" y="283" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">WebSocket /ws</text>
+<text x="924" y="304" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">Haru Profile 解析命令</text>
+<text x="924" y="325" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" font-weight="500" fill="#24313A">动作 / 表情 / 追踪 / TTS</text>
+<path d="M 276 275 L 342 275" fill="none" stroke="#667085" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="287" y="244" width="46" height="23" rx="11" fill="#FCFBF8" opacity="0.96"/>
+<text x="294" y="261" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12" font-weight="700" fill="#667085">JSON</text>
+<path d="M 556 275 L 622 275" fill="none" stroke="#667085" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="561" y="244" width="78" height="23" rx="11" fill="#FCFBF8" opacity="0.96"/>
+<text x="568" y="261" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12" font-weight="700" fill="#667085">datagram</text>
+<path d="M 836 275 L 902 275" fill="none" stroke="#667085" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="838" y="244" width="86" height="23" rx="11" fill="#FCFBF8" opacity="0.96"/>
+<text x="845" y="261" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12" font-weight="700" fill="#667085">WebSocket</text>
+<rect x="62" y="422" width="514" height="166" rx="20" fill="#FCEBF1" stroke="#C65B83" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="84" y="457" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#983C60">gesture_command 数据包</text>
+<text x="84" y="484" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">version / type / source / timestamp</text>
+<text x="84" y="509" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">gesture / command / hand</text>
+<text x="84" y="534" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">hands[]：双手状态、中心坐标、Z 轴、尺度、区域与运动</text>
+<text x="84" y="559" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">浏览器既可消费离散命令，也可消费连续追踪参数</text>
+<rect x="622" y="422" width="572" height="166" rx="20" fill="#F2F4F7" stroke="#7A8793" stroke-width="1.5" filter="url(#shadow)"/>
+<text x="644" y="457" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#4E5964">调试与边界</text>
+<text x="644" y="484" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">tools/udp_receiver_test.py 可单独验证 UDP 数据包</text>
+<text x="644" y="509" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">接收测试器与 Bridge 不可同时绑定 5005 端口</text>
+<text x="644" y="534" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">Web 页面 Local Test 可绕过摄像头，单独验证模型响应</text>
+<text x="644" y="559" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="14" font-weight="500" fill="#24313A">三段链路可拆开排查：识别端、Bridge、浏览器端</text>
+<text x="62" y="654" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="15" font-weight="700" fill="#4E5964">推荐启动顺序：先启动 Node Bridge，再启动 Python main.py，最后访问浏览器页面</text>
+</svg>
