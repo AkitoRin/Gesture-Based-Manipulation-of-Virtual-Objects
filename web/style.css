@@ -85,12 +85,13 @@ button {
 .hero-panel {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding: 34px;
 }
 
+/* HandPilot × Haru 现在位于标题下方，所以上方留间距、下方不留 */
 .eyebrow {
-  margin: 0 0 16px;
+  margin: 18px 0 0;
   color: var(--gold);
   font-size: 15px;
   font-weight: 800;
@@ -106,10 +107,14 @@ p {
 }
 
 h1 {
-  margin-bottom: 16px;
-  font-size: clamp(34px, 5.2vw, 72px);
-  line-height: 0.95;
-  letter-spacing: -0.08em;
+  margin-bottom: 0;
+  max-width: 100%;
+  font-size: clamp(36px, 4vw, 58px);
+  line-height: 1.06;
+  /* Companion 是长单词，字号过大会顶出左侧卡片，所以这里用更稳的标题宽度 */
+  letter-spacing: -0.015em;
+  overflow-wrap: break-word;
+  text-wrap: balance;
 }
 
 .subtitle {
@@ -400,20 +405,61 @@ h1 {
 
 .test-buttons {
   display: grid;
+  gap: 14px;
+}
+
+/* 每个分组：小标题 + 该组按钮网格 */
+.test-group {
+  display: grid;
+  gap: 8px;
+}
+
+.test-group h4 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.test-group-grid {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 .test-buttons button {
+  display: grid;
+  gap: 2px;
   min-width: 0;
-  padding: 10px 8px;
+  padding: 9px 8px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.72);
   color: var(--ink);
   cursor: pointer;
-  font-size: 12px;
+  text-align: left;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.test-buttons button:hover {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: var(--blue);
+}
+
+/* 按钮第一行：中文效果名（醒目） */
+.test-buttons button strong {
+  font-size: 13px;
   font-weight: 900;
+  line-height: 1.2;
+}
+
+/* 按钮第二行：触发手势（小字、弱化） */
+.test-buttons button span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .stage[data-costume="blush"] .live2d-wrap::before {
