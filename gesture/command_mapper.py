@@ -24,7 +24,7 @@ _GESTURE_TO_COMMAND = {
     "THREE":       "CMD_SURPRISE",      # 三根手指 → 惊讶反应
     "FOUR":        "CMD_CHEER",         # 四根手指 → 应援/鼓励
     "FOUR_THUMB":  "CMD_SHY",           # 拇指+三指 → 害羞/可爱反应
-    "PINKY_UP":    "CMD_SHY",           # 小指朝上  → 害羞/约定感
+    "PINKY_UP":    "CMD_PROMISE",       # 小指朝上  → 拉钩约定（独立动作，避免和 FOUR_THUMB 撞车重复）
     "UNKNOWN":     "CMD_NONE",          # 未知手势  → 无操作
 }
 """
